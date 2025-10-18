@@ -6,9 +6,12 @@ import { initDatabase } from "./api/config/initDatabase";
 dotenv.config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
-
+app.use(cors({
+  origin: "http://localhost:5173", // reemplaza con el origen de tu frontend
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, // si necesitas cookies
+}));
 // importar rutas correctamente
 import userRoutes from "./api/routes/userRoutes";
 import authRoutes from "./api/routes/authRoutes";
