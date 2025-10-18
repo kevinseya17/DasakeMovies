@@ -6,9 +6,10 @@ import { isValidEmail, isValidPassword, isValidAge, passwordsMatch } from "../ut
 // registrar usuario
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const {firtsName, LastName, edad, email, password, confirmPassword } = req.body;
+    console.log("req.body recibido:", req.body); 
+    const { firtsName, LastName, edad, email, password, confirmPassword } = req.body;
 
-    if (firtsName || !LastName) return res.status(400).json({ message: "Nombre y LastName son requeridos" });
+    if (!firtsName || !LastName) return res.status(400).json({ message: "Nombre y LastName son requeridos" });
     if (!isValidAge(edad)) return res.status(400).json({ message: "Edad mínima 13 años" });
     if (!isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
     if (!isValidPassword(password)) return res.status(400).json({ message: "Contraseña no cumple los requisitos" });
