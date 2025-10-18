@@ -7,10 +7,10 @@ import { isValidEmail, isValidPassword, isValidAge, passwordsMatch } from "../ut
 export const registerUser = async (req: Request, res: Response) => {
   try {
     console.log("req.body recibido:", req.body); 
-    const { firtsName, LastName, edad, email, password, confirmPassword } = req.body;
+    const { firstName, lastName, age, email, password, confirmPassword } = req.body;
 
-    if (!firtsName || !LastName) return res.status(400).json({ message: "Nombre y LastName son requeridos" });
-    if (!isValidAge(edad)) return res.status(400).json({ message: "Edad mínima 13 años" });
+    if (!firstName || !lastName) return res.status(400).json({ message: "Nombre y lastName son requeridos" });
+    if (!isValidAge(age)) return res.status(400).json({ message: "Edad mínima 13 años" });
     if (!isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
     if (!isValidPassword(password)) return res.status(400).json({ message: "Contraseña no cumple los requisitos" });
     if (!passwordsMatch(password, confirmPassword)) return res.status(400).json({ message: "Las contraseñas no coinciden" });
@@ -21,7 +21,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await hashPassword(password);
 
     const { data, error } = await supabase.from("users").insert([{
-    firtsName, LastName, edad, email, password: hashedPassword, created_at: new Date().toISOString()
+    firstName, lastName, age, email, password: hashedPassword, created_at: new Date().toISOString()
     }]).select();
 
     if (error) return res.status(500).json({ message: "Intenta de nuevo más tarde" });
@@ -63,19 +63,19 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const {firtsName, LastName, edad, correo, password, confirmPassword } = req.body;
+    const {firstName, lastName, age, correo, password, confirmPassword } = req.body;
 
     const updates: any = {};
 
     // validaciones condicionales
-    if (firtsName) updates.firtsName = firtsName.trim();
-    if (LastName) updates.LastName = LastName.trim();
+    if (firstName) updates.firstName = firstName.trim();
+    if (lastName) updates.lastName = lastName.trim();
 
-    if (edad !== undefined) {
-      if (edad < 13) {
+    if (age !== undefined) {
+      if (age < 13) {
         return res.status(400).json({ message: "debes tener al menos 13 años" });
       }
-      updates.edad = edad;
+      updates.age = age;
     }
 
     if (correo) {
