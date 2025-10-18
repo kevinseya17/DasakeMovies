@@ -5,7 +5,6 @@ export interface User {
   edad: number;
   email: string;
   password: string;
-  direccion?: string;
   telefono?: string;
   created_at?: string;
 }
