@@ -8,12 +8,12 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     console.log("req.body recibido:", req.body); 
     const { firstName, lastName, age, email, password, confirmPassword } = req.body;
-
-    if (!firstName || !lastName) return res.status(400).json({ message: "Nombre y lastName son requeridos" });
-    if (!isValidAge(age)) return res.status(400).json({ message: "Edad mínima 13 años" });
-    if (!isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
-    if (!isValidPassword(password)) return res.status(400).json({ message: "Contraseña no cumple los requisitos" });
-    if (!passwordsMatch(password, confirmPassword)) return res.status(400).json({ message: "Las contraseñas no coinciden" });
+    //  
+    //if (!firstName || !lastName) return res.status(400).json({ message: "Nombre y lastName son requeridos" });
+    //if (!isValidAge(age)) return res.status(400).json({ message: "Edad mínima 13 años" });
+    //if (!isValidEmail(email)) return res.status(400).json({ message: "Correo inválido" });
+    //if (!isValidPassword(password)) return res.status(400).json({ message: "Contraseña no cumple los requisitos" });
+    //if (!passwordsMatch(password, confirmPassword)) return res.status(400).json({ message: "Las contraseñas no coinciden" });
 
     const { data: existing } = await supabase.from("users").select("*").eq("email", email);
     if (existing && existing.length > 0) return res.status(409).json({ message: "Este correo ya está registrado" });
