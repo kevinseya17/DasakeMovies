@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    /* salida del compilador */
+    "target": "ES2020",
+    "module": "CommonJS",
+    "rootDir": "./",
+    "outDir": "./dist",
+
+    /* soporte node y librerías */
+    "lib": ["ES2020"],
+    "types": ["node"],
+
+    /* opciones de import/export */
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* chequeos de tipo */
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* mapas y depuración */
+    "sourceMap": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
