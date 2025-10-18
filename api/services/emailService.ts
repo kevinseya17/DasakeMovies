@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // set API key from environment variables
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || "");
 
 /**
  * sendMail
