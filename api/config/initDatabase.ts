@@ -10,9 +10,9 @@ export const initDatabase = async () => {
       await supabase.rpc("exec", { sql: `
         CREATE TABLE IF NOT EXISTS users (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          nombre text NOT NULL,
-          apellidos text NOT NULL,
-          edad int CHECK (edad >= 13),
+          firstName text NOT NULL,
+          lastName text NOT NULL,
+          age int CHECK (age >= 13),
           email text UNIQUE NOT NULL,
           password text NOT NULL,
           created_at timestamptz DEFAULT now()

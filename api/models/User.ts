@@ -1,10 +1,10 @@
 export interface User {
   id?: string;
-  nombre: string;
-  apellidos: string;
-  edad: number;
+  firtsName: string;
+  LastName: string;
+  age: number;
   email: string;
   password: string;
-  telefono?: string;
+  confirmPassword?: string;
   created_at?: string;
 }
