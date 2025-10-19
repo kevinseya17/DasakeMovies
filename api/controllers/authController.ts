@@ -49,71 +49,69 @@ export const profile = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Intenta de nuevo más tarde" });
   }
 };
-
+const JWT_SECRET = process.env.JWT_SECRET!;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+// solicitar recuperación de contraseña
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
 
-    const { data: userData } = await supabase.from("users").select("*").eq("email", email).single();
-    if (!userData) {
+    const { data: users } = await supabase.from("users").select("*").eq("email", email);
+    if (!users || users.length === 0) {
+      // no revelamos si el correo existe
       return res.status(200).json({ message: "Revisa tu correo para continuar" });
     }
 
-    const user = userData;
+    const user = users[0];
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
 
-    // generar JWT con duración de 1 hora
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "1h" }
-    );
+    // guardar token en tabla auxiliar
+    await supabase.from("password_resets").insert([
+      { user_id: user.id, token, used: false, created_at: new Date().toISOString() }
+    ]);
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset?token=${token}`;
-
+    const resetLink = `${FRONTEND_URL}/reset?token=${encodeURIComponent(token)}`;
     const html = `
-      <p>Hola ${user.firstName},</p>
-      <p>Haz clic <a href="${resetLink}">aquí</a> para restablecer tu contraseña.</p>
-      <p>Este enlace es válido por 1 hora.</p>
-      <p>Si no solicitaste el cambio, ignora este correo.</p>
+      <p>hola ${user.firstName},</p>
+      <p>haz clic <a href="${resetLink}">aquí</a> para restablecer tu contraseña.</p>
+      <p>el enlace vence en 1 hora y solo puede usarse una vez.</p>
     `;
 
-    await sendMail(email, "Restablece tu contraseña", html);
-
-    res.status(200).json({ message: "Revisa tu correo para continuar" });
+    await sendMail(email, "restablece tu contraseña", html);
+    return res.status(200).json({ message: "revisa tu correo para continuar" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Intenta de nuevo más tarde" });
+    console.error("error en forgotPassword:", err);
+    return res.status(500).json({ message: "intenta de nuevo más tarde" });
   }
 };
 
+// resetear contraseña
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { token, password } = req.body;
-    if (!token || !password) return res.status(400).json({ message: "Token y contraseña requeridos" });
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword)
+      return res.status(400).json({ message: "token y nueva contraseña requeridos" });
 
-    // verificar JWT
     let payload: any;
     try {
-      payload = jwt.verify(token, process.env.JWT_SECRET as string);
-    } catch (err) {
-      return res.status(400).json({ message: "Token inválido o expirado" });
+      payload = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(400).json({ message: "enlace inválido o caducado" });
     }
 
-    const userId = payload.userId;
+    const { data: users } = await supabase.from("users").select("*").eq("id", payload.userId);
+    if (!users || users.length === 0)
+      return res.status(404).json({ message: "usuario no encontrado" });
 
-    // actualizar contraseña
-    const hashedPassword = await hashPassword(password);
+    const user = users[0];
+    const hashedPassword = await hashPassword(newPassword);
 
-    const { error } = await supabase
-      .from("users")
-      .update({ password: hashedPassword })
-      .eq("id", userId);
+    await supabase.from("users").update({ password: hashedPassword }).eq("id", user.id);
+    await supabase.from("password_resets").update({ used: true }).eq("token", token);
 
-    if (error) return res.status(500).json({ message: "Error al actualizar contraseña" });
-
-    res.status(200).json({ message: "Contraseña restablecida correctamente" });
+    return res.status(200).json({ message: "contraseña actualizada con éxito" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Intenta de nuevo más tarde" });
+    console.error("error en resetPassword:", err);
+    return res.status(500).json({ message: "intenta de nuevo más tarde" });
   }
 };
