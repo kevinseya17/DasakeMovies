@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173", // reemplaza con el origen de tu frontend
+  origin: ["http://localhost:5173", "https://dasake-front-ep5g.vercel.app/"], // reemplaza con el origen de tu frontend
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true, // si necesitas cookies
   
