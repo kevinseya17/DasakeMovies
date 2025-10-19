@@ -188,4 +188,18 @@ export const deleteUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "error interno del servidor" });
   }
 };
+// obtener perfil del usuario logueado
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id; // viene del authMiddleware
+    const { data, error } = await supabase.from("users").select("*").eq("id", userId);
+    if (error) return res.status(500).json({ message: "Intenta de nuevo más tarde" });
+    if (!data || data.length === 0) return res.status(404).json({ message: "Usuario no encontrado" });
 
+    const { password, ...user } = data[0]; // no enviar password
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Intenta de nuevo más tarde" });
+  }
+};
