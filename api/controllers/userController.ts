@@ -8,11 +8,6 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     console.log("req.body recibido:", req.body); 
     const { firstName, lastName, age, email, password, confirmPassword } = req.body;
-    // Validaciones
-    console.log("email recibido:", email, "es válido?", isValidEmail(email));
-    console.log("password recibido:", password, "es válido?", isValidPassword(password));
-    console.log("age recibido:", age, "es válido?", isValidAge(age));
-    console.log("passwords coinciden?", passwordsMatch(password, confirmPassword));
 
     if (!firstName || !lastName) return res.status(400).json({ message: "Nombre y lastName son requeridos" });
     if (!isValidAge(age)) return res.status(400).json({ message: "Edad mínima 13 años" });
