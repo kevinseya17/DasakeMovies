@@ -50,36 +50,35 @@ export const profile = async (req: Request, res: Response) => {
   }
 };
 
-// solicitar recuperación de contraseña
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    const { data: userData } = await supabase.from("users").select("*").eq("email", email);
 
-    if (!userData || userData.length === 0) {
+    const { data: userData } = await supabase.from("users").select("*").eq("email", email).single();
+    if (!userData) {
       return res.status(200).json({ message: "Revisa tu correo para continuar" });
     }
 
-    const user = userData[0];
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const user = userData;
 
-    await supabase.from("password_resets").insert([{
-      user_id: user.id,
-      token,
-      expires_at: expiresAt,
-      used: false
-    }]);
+    // generar JWT con duración de 1 hora
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" }
+    );
 
     const resetLink = `${process.env.FRONTEND_URL}/reset?token=${token}`;
+
     const html = `
-      <p>Hola ${user.nombre},</p>
+      <p>Hola ${user.firstName},</p>
       <p>Haz clic <a href="${resetLink}">aquí</a> para restablecer tu contraseña.</p>
-      <p>Este enlace es válido por 1 hora y solo puede ser usado una vez.</p>
+      <p>Este enlace es válido por 1 hora.</p>
       <p>Si no solicitaste el cambio, ignora este correo.</p>
     `;
 
     await sendMail(email, "Restablece tu contraseña", html);
+
     res.status(200).json({ message: "Revisa tu correo para continuar" });
   } catch (err) {
     console.error(err);
@@ -87,27 +86,32 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-// resetear contraseña
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { token, password, confirmPassword } = req.body;
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ message: "Token y contraseña requeridos" });
 
-    if (!isValidPassword(password)) return res.status(400).json({ message: "Contraseña no cumple los requisitos" });
-    if (!passwordsMatch(password, confirmPassword)) return res.status(400).json({ message: "Las contraseñas no coinciden" });
+    // verificar JWT
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET as string);
+    } catch (err) {
+      return res.status(400).json({ message: "Token inválido o expirado" });
+    }
 
-    const { data } = await supabase.from("password_resets").select("*").eq("token", token).eq("used", false);
-    if (!data || data.length === 0) return res.status(400).json({ message: "Enlace inválido o caducado" });
+    const userId = payload.userId;
 
-    const resetRecord = data[0];
-    const now = new Date().toISOString();
-    if (now > resetRecord.expires_at) return res.status(400).json({ message: "Enlace inválido o caducado" });
-
+    // actualizar contraseña
     const hashedPassword = await hashPassword(password);
 
-    await supabase.from("users").update({ password: hashedPassword }).eq("id", resetRecord.user_id);
-    await supabase.from("password_resets").update({ used: true }).eq("id", resetRecord.id);
+    const { error } = await supabase
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("id", userId);
 
-    res.status(200).json({ message: "Contraseña actualizada" });
+    if (error) return res.status(500).json({ message: "Error al actualizar contraseña" });
+
+    res.status(200).json({ message: "Contraseña restablecida correctamente" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Intenta de nuevo más tarde" });
