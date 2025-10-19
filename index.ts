@@ -11,6 +11,7 @@ app.use(cors({
   origin: "http://localhost:5173", // reemplaza con el origen de tu frontend
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true, // si necesitas cookies
+  
 }));
 // importar rutas correctamente
 import userRoutes from "./api/routes/userRoutes";
