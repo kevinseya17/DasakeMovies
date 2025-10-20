@@ -70,7 +70,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       { user_id: user.id, token, used: false, created_at: new Date().toISOString() }
     ]);
 
-    const resetLink = `https://dasake-front-ep5g.vercel.app//reset?token=${token}`;
+    const resetLink = `https://dasake-front-ep5g.vercel.app/reset?token=${token}`;
     const html = `
       <p>hola ${user.firstName},</p>
       <p>haz clic <a href="${resetLink}">aquí</a> para restablecer tu contraseña.</p>
