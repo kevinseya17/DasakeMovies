@@ -7,12 +7,14 @@ dotenv.config();
 // solo para hacer comit
 const app = express();
 app.use(express.json());
-app.use(cors({
-  origin: ["http://localhost:5173", "https://dasake-front-ep5g.vercel.app/"], // reemplaza con el origen de tu frontend
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true, // si necesitas cookies
-  
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://dasake-front-ep5g.vercel.app"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 // importar rutas correctamente
 import userRoutes from "./api/routes/userRoutes";
 import authRoutes from "./api/routes/authRoutes";
