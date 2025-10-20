@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { initDatabase } from "./api/config/initDatabase";
 
 dotenv.config();
-
+// solo para hacer comit
 const app = express();
 app.use(express.json());
 app.use(cors({
