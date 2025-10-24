@@ -22,7 +22,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // maneja manualmente las solicitudes OPTIONS (preflight)
-app.options("*", cors(corsOptions)); // <-- esta línea es clave
+app.options(/.*/, cors(corsOptions)); // <-- esta línea es clave
 
 app.use(express.json());
 
