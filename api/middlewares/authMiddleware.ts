@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import cors from "cors";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  // habilita CORS en esta capa también
+  res.header("Access-Control-Allow-Origin", "https://dasake-front-yc4x.vercel.app");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "No autorizado" });
 
