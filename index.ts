@@ -17,9 +17,22 @@ const allowedOrigins = [
   "https://dasake-front-35rqu23me-santiagobedons-projects.vercel.app"
 ];
 
+// cors
 app.use(cors({
   origin: (origin, callback) => {
-    // permite peticiones sin origen (p. ej. postman) o desde tu front
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS no permitido"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+//  maneja manualmente las solicitudes OPTIONS
+app.options(/.*/, cors({
+  origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -37,10 +50,10 @@ app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
-// ruta de prueba
+// ruta base
 app.get("/", (req, res) => res.send("🔥 backend funcionando correctamente"));
 
-// inicializar la DB
+// inicializar db
 initDatabase();
 
 // puerto
