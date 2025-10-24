@@ -11,7 +11,7 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:5173",
-    "https://dasake-front-ep5g.vercel.app", // tu frontend en vercel
+    "https://dasake-front-yc4x.vercel.app", // tu frontend en vercel
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
