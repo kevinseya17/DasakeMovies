@@ -88,10 +88,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
 // resetear contraseña
 export const resetPassword = async (req: Request, res: Response) => {
   
-
   try {
     const { token, newPassword } = req.body;
-    console.log("body recibido:", req.body);
     if (!token || !newPassword)
       return res.status(400).json({ message: "token y nueva contraseña requeridos" });
 
@@ -99,6 +97,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     try {
       payload = jwt.verify(token, JWT_SECRET);
     } catch {
+      
       return res.status(400).json({ message: "enlace inválido o caducado" });
     }
 
