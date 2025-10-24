@@ -21,7 +21,7 @@ app.use(
 );
 
 //  esto permite que express responda correctamente las solicitudes preflight (OPTIONS)
-app.options("*", cors());
+app.options(/.*/, cors());
 
 //  parseo de JSON
 app.use(express.json());
