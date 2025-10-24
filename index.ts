@@ -7,30 +7,29 @@ dotenv.config();
 
 const app = express();
 
-// configuracion cors
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://dasake-front-yc4x.vercel.app", // frontend en vercel
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
+// 🔧 configuracion cors ultra estricta
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dasake-front-yc4x.vercel.app", // frontend en vercel
+];
 
-// aplica cors y json
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// middleware adicional para asegurar los headers cors en todas las respuestas
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://dasake-front-yc4x.vercel.app");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
+
+  // maneja el preflight (OPTIONS)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
   next();
 });
+
+app.use(express.json());
 
 // importar rutas
 import userRoutes from "./api/routes/userRoutes";
@@ -43,7 +42,7 @@ app.use("/api/auth", authRoutes);
 // inicializar base de datos
 initDatabase();
 
-// ruta base de prueba
+// ruta de prueba
 app.get("/", (req, res) => {
   res.send("🔥 backend funcionando correctamente");
 });
