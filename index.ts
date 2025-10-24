@@ -7,39 +7,40 @@ dotenv.config();
 
 const app = express();
 
-//  configuración CORS
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://dasake-front-yc4x.vercel.app",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// opciones de cors
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "https://dasake-front-yc4x.vercel.app",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
 
-//  esto permite que express responda correctamente las solicitudes preflight (OPTIONS)
-app.options(/.*/, cors());
+// aplica cors
+app.use(cors(corsOptions));
 
-//  parseo de JSON
+// maneja manualmente las solicitudes OPTIONS (preflight)
+app.options("*", cors(corsOptions)); // <-- esta línea es clave
+
 app.use(express.json());
-// ✅rutas
+
+// importar rutas
 import userRoutes from "./api/routes/userRoutes";
 import authRoutes from "./api/routes/authRoutes";
 
+// usar rutas
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
-//  test route (mantener)
-app.get("/", (_req, res) => {
+// ruta básica
+app.get("/", (req, res) => {
   res.send("🔥 backend funcionando correctamente");
 });
 
-// ✅ inicializar DB
+// inicializar la DB
 initDatabase();
 
-// ✅ iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 servidor corriendo en puerto ${PORT}`));
