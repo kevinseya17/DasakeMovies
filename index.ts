@@ -18,8 +18,8 @@ app.use(cors({
   origin: (origin, callback) => {
     if (
       !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.match(/^https:\/\/dasake-front.*\.vercel\.app$/)
+      origin.startsWith("https://dasake-front") ||
+      origin === "http://localhost:5173"
     ) {
       callback(null, true);
     } else {
@@ -30,6 +30,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
 
 app.use(express.json());
 
