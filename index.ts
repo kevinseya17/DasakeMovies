@@ -2,46 +2,47 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { initDatabase } from "./api/config/initDatabase";
+import userRoutes from "./api/routes/userRoutes";
+import authRoutes from "./api/routes/authRoutes";
 
 dotenv.config();
 
 const app = express();
 
-// opciones de cors
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://dasake-front.vercel.app",
-    "https://dasake-front-yc4x.vercel.app"
-  ],
+// dominios permitidos
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dasake-front.vercel.app",
+  "https://dasake-front-yc4x.vercel.app",
+  "https://dasake-front-35rqu23me-santiagobedons-projects.vercel.app"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // permite peticiones sin origen (p. ej. postman) o desde tu front
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS no permitido"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
+}));
 
-// aplica cors
-app.use(cors(corsOptions));
-
-// maneja manualmente las solicitudes OPTIONS (preflight)
-app.options(/.*/, cors(corsOptions)); // <-- esta línea es clave
-
+// parsea JSON
 app.use(express.json());
 
-// importar rutas
-import userRoutes from "./api/routes/userRoutes";
-import authRoutes from "./api/routes/authRoutes";
-
-// usar rutas
+// rutas
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
-// ruta básica
-app.get("/", (req, res) => {
-  res.send("🔥 backend funcionando correctamente");
-});
+// ruta de prueba
+app.get("/", (req, res) => res.send("🔥 backend funcionando correctamente"));
 
 // inicializar la DB
 initDatabase();
 
+// puerto
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 servidor corriendo en puerto ${PORT}`));
