@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { initDatabase } from "./api/config/initDatabase";
 import userRoutes from "./api/routes/userRoutes";
 import authRoutes from "./api/routes/authRoutes";
-
+import movieRoutes from "./api/routes/movieRoutes";
 dotenv.config();
 
 const app = express();
@@ -60,6 +60,7 @@ app.use(express.json());
 // rutas
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", movieRoutes);
 
 // ruta base
 app.get("/", (req, res) => res.send("🔥 backend funcionando correctamente"));
