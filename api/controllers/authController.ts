@@ -117,3 +117,28 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "intenta de nuevo más tarde" });
   }
 };
+// cambiar contraseña desde perfil
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ message: "faltan campos requeridos" });
+
+    // obtener usuario
+    const { data: users, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (error || !users) return res.status(404).json({ message: "usuario no encontrado" });
+
+    const valid = await comparePassword(currentPassword, users.password);
+    if (!valid) return res.status(401).json({ message: "contraseña actual incorrecta" });
+
+    const hashedPassword = await hashPassword(newPassword);
+    await supabase.from("users").update({ password: hashedPassword }).eq("id", userId);
+
+    return res.status(200).json({ message: "contraseña actualizada con éxito" });
+  } catch (err) {
+    console.error("error en changePassword:", err);
+    return res.status(500).json({ message: "intenta de nuevo más tarde" });
+  }
+};
