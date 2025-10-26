@@ -1,76 +1,76 @@
 import { Request, Response } from "express";
-import fetch from "node-fetch";
+import axios from "axios";
+import dotenv from "dotenv";
 
-const categorizeMovie = (movie: any): string => {
-  const name =
-    (movie.user?.name?.toLowerCase() || "") +
-    " " +
-    (movie.url?.toLowerCase() || "");
+dotenv.config();
 
-  if (name.includes("sport") || name.includes("deporte") || name.includes("run")) {
-    return "deportes";
-  } else if (
-    name.includes("nature") ||
-    name.includes("mountain") ||
-    name.includes("sky") ||
-    name.includes("forest") ||
-    name.includes("beach")
-  ) {
-    return "naturaleza";
-  } else if (
-    name.includes("city") ||
-    name.includes("street") ||
-    name.includes("urban")
-  ) {
-    return "urbano";
-  } else if (name.includes("music") || name.includes("concert")) {
-    return "musica";
-  } else if (name.includes("tech") || name.includes("computer") || name.includes("device")) {
-    return "tecnologia";
-  } else if (name.includes("food") || name.includes("kitchen") || name.includes("cook")) {
-    return "gastronomia";
-  } else {
-    return "otros";
-  }
-};
+const API_KEY = process.env.PEXELS_API_KEY;
+if (!API_KEY) {
+  throw new Error("falta la clave de api de pexels en el archivo .env");
+}
+
+// categorías de videos que queremos traer
+const categories = [
+  "accion",
+  "naturaleza",
+  "deportes",
+  "cine",
+  "musica",
+  "tecnologia",
+];
+
+// estructura de caché en memoria
+let cachedMovies: any[] | null = null;
+let lastFetchTime = 0; // timestamp de la última actualización
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hora en milisegundos
 
 export const getMovies = async (req: Request, res: Response) => {
-  const query = (req.query.q as string) || "action";
-  const perPage = Number(req.query.perPage) || 10;
-  const API_KEY = process.env.PEXELS_API_KEY;
-
   try {
-    const response = await fetch(
-      `https://api.pexels.com/videos/search?query=${query}&per_page=${perPage}`,
-      {
-        headers: { Authorization: API_KEY! },
-      }
-    );
+    const now = Date.now();
 
-    if (!response.ok) {
-      return res.status(response.status).json({ message: "Error al obtener videos" });
+    // si los datos están en caché y no ha pasado una hora, devolverlos
+    if (cachedMovies && now - lastFetchTime < CACHE_DURATION) {
+      console.log("🟢 devolviendo peliculas desde cache");
+      return res.json(cachedMovies);
     }
 
-    const data = (await response.json()) as { videos: any[] };
+    console.log("🟡 cache expirado o vacío, obteniendo datos de pexels...");
 
-    // agregar categoría
-    const categorized = data.videos.map((movie) => ({
-      ...movie,
-      category: categorizeMovie(movie),
-    }));
+    const allMovies: any[] = [];
 
-    // agrupar por categoría
-    const grouped: Record<string, any[]> = {};
-    categorized.forEach((movie) => {
-      if (!grouped[movie.category]) {
-        grouped[movie.category] = [];
-      }
-      grouped[movie.category].push(movie);
-    });
+    // traer videos por categoría
+    for (const cat of categories) {
+      const response = await axios.get("https://api.pexels.com/videos/search", {
+        headers: { Authorization: API_KEY },
+        params: {
+          query: cat,
+          per_page: 5, // puedes subirlo a 10-15 si deseas más
+        },
+      });
 
-    res.json(grouped);
-  } catch (err) {
-    console.error("Error al consumir Pexels API:", err);
-    res.status(500).json({ message: "Error interno del servidor" });
+      const videos = response.data.videos.map((v: any) => ({
+        id: v.id,
+        url: v.url,
+        image: v.image ?? v.video_pictures?.[0]?.picture ?? "",
+        category: cat,
+        user: {
+          name: v.user?.name ?? "autor desconocido",
+          url: v.user?.url ?? "",
+        },
+        video_files: v.video_files ?? [],
+      }));
+
+      allMovies.push(...videos);
+    }
+
+    // guardar en caché
+    cachedMovies = allMovies;
+    lastFetchTime = now;
+
+    console.log("✅ peliculas actualizadas y guardadas en cache");
+    res.json(allMovies);
+  } catch (err: any) {
+    console.error("❌ error al obtener videos de pexels:", err.message);
+    res.status(500).json({ error: "no se pudieron cargar los videos" });
   }
 };
