@@ -17,18 +17,21 @@ const categories = [
   "cine",
   "musica",
   "tecnologia",
+  "urbano",
+  "gastronomia",
+  "otros"
 ];
 
 // estructura de caché en memoria
-let cachedMovies: any[] | null = null;
-let lastFetchTime = 0; // timestamp de la última actualización
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hora en milisegundos
+let cachedMovies: Record<string, any[]> | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hora
 
 export const getMovies = async (req: Request, res: Response) => {
   try {
     const now = Date.now();
 
-    // si los datos están en caché y no ha pasado una hora, devolverlos
+    // si los datos están en caché y no ha expirado
     if (cachedMovies && now - lastFetchTime < CACHE_DURATION) {
       console.log("🟢 devolviendo peliculas desde cache");
       return res.json(cachedMovies);
@@ -36,15 +39,14 @@ export const getMovies = async (req: Request, res: Response) => {
 
     console.log("🟡 cache expirado o vacío, obteniendo datos de pexels...");
 
-    const allMovies: any[] = [];
+    const groupedMovies: Record<string, any[]> = {};
 
-    // traer videos por categoría
     for (const cat of categories) {
       const response = await axios.get("https://api.pexels.com/videos/search", {
         headers: { Authorization: API_KEY },
         params: {
           query: cat,
-          per_page: 5, // puedes subirlo a 10-15 si deseas más
+          per_page: 5, // puedes ajustar este número
         },
       });
 
@@ -60,15 +62,15 @@ export const getMovies = async (req: Request, res: Response) => {
         video_files: v.video_files ?? [],
       }));
 
-      allMovies.push(...videos);
+      groupedMovies[cat] = videos;
     }
 
     // guardar en caché
-    cachedMovies = allMovies;
+    cachedMovies = groupedMovies;
     lastFetchTime = now;
 
     console.log("✅ peliculas actualizadas y guardadas en cache");
-    res.json(allMovies);
+    res.json(groupedMovies);
   } catch (err: any) {
     console.error("❌ error al obtener videos de pexels:", err.message);
     res.status(500).json({ error: "no se pudieron cargar los videos" });
