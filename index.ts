@@ -1,10 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import helmet from "helmet";
 import { initDatabase } from "./api/config/initDatabase";
 import userRoutes from "./api/routes/userRoutes";
 import authRoutes from "./api/routes/authRoutes";
 import movieRoutes from "./api/routes/movieRoutes";
+
 dotenv.config();
 
 const app = express();
@@ -53,6 +55,38 @@ app.options(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// protecciones de seguridad
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// cabeceras CSP para restringir recursos externos peligrosos
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "img-src * data:",
+      "media-src https://videos.pexels.com https://player.vimeo.com",
+      "script-src 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+    ].join("; ")
+  );
+  next();
+});
+
+// cabeceras adicionales para evitar sniffing y clickjacking
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 
 // middleware json
 app.use(express.json());
