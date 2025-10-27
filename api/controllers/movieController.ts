@@ -8,17 +8,51 @@ dotenv.config();
 const API_KEY = process.env.PEXELS_API_KEY;
 if (!API_KEY) throw new Error("falta la clave de api de pexels en el archivo .env");
 
-// categorias base
+/**
+ * Default video categories used for fetching movies.
+ * constant
+ * type {string[]}
+ */
 const categories = ["accion", "naturaleza", "deportes", "cine", "musica", "tecnologia"];
 
-// cache en memoria
+/**
+ * In-memory cache for fetched movies.
+ * type {any[] | null}
+ */
 let cachedMovies: any[] | null = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hora
 
-// dominios de confianza
+/**
+ * Timestamp of the last cache update.
+ * type {number}
+ */
+let lastFetchTime = 0;
+
+/**
+ * Cache validity duration in milliseconds (1 hour).
+ * constant
+ * type {number}
+ */
+const CACHE_DURATION = 60 * 60 * 1000;
+
+/**
+ * List of trusted video domains allowed in the results.
+ * constant
+ * type {string[]}
+ */
 const ALLOWED_DOMAINS = ["pexels.com", "videos.pexels.com", "player.vimeo.com"];
 
+/**
+ * Fetches videos from the Pexels API by category and caches them securely.
+ *
+ * Uses a one-hour cache to reduce redundant API calls.
+ * Filters video files to ensure they come from trusted domains and have valid HTTPS URLs.
+ *
+ * async
+ * function getMovies
+ * param {Request} req - Express request object.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON response with cached or freshly fetched videos.
+ */
 export const getMovies = async (req: Request, res: Response) => {
   try {
     const now = Date.now();
@@ -81,7 +115,15 @@ export const getMovies = async (req: Request, res: Response) => {
   }
 };
 
-// agregar a favoritos
+/**
+ * Adds a video to the user's list of favorites in the database.
+ *
+ * async
+ * function addFavorite
+ * param {Request} req - Express request object containing `userId`, `videoId`, `videoUrl`, and optional `videoImage`.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message confirming success or error.
+ */
 export const addFavorite = async (req: Request, res: Response) => {
   const { userId, videoId, videoUrl, videoImage } = req.body;
 
@@ -97,7 +139,15 @@ export const addFavorite = async (req: Request, res: Response) => {
   res.status(201).json({ message: "favorito agregado correctamente", data });
 };
 
-// eliminar de favoritos
+/**
+ * Removes a video from the user's list of favorites in the database.
+ *
+ * async
+ * function removeFavorite
+ * param {Request} req - Express request object containing `userId` and `videoId`.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message confirming success or error.
+ */
 export const removeFavorite = async (req: Request, res: Response) => {
   const { userId, videoId } = req.body;
 
@@ -115,7 +165,15 @@ export const removeFavorite = async (req: Request, res: Response) => {
   res.status(200).json({ message: "favorito eliminado correctamente" });
 };
 
-// obtener favoritos de un usuario
+/**
+ * Retrieves all favorite videos of a specific user.
+ *
+ * async
+ * function getFavorites
+ * param {Request} req - Express request object containing `userId` as a query parameter.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON array of the user's favorite videos.
+ */
 export const getFavorites = async (req: Request, res: Response) => {
   const userId = req.query.userId as string;
 

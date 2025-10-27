@@ -11,13 +11,19 @@ dotenv.config();
 
 const app = express();
 
-// lista de orígenes permitidos
+/**
+ * allowed origins list
+ * defines which domains can interact with the backend
+ */
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONTEND_URL, // https://dasake-front.vercel.app
+  process.env.FRONTEND_URL, // example: https://dasake-front.vercel.app
 ];
 
-// configuración de cors
+/**
+ * cors configuration
+ * allows secure cross-origin requests only from trusted sources
+ */
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -28,7 +34,7 @@ app.use(
       ) {
         callback(null, true);
       } else {
-        callback(new Error("CORS no permitido"));
+        callback(new Error("CORS not allowed"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -36,7 +42,10 @@ app.use(
   })
 );
 
-// manejar solicitudes OPTIONS (preflight)
+/**
+ * handles OPTIONS requests (CORS preflight)
+ * ensures browsers can confirm permissions before sending actual requests
+ */
 app.options(
   /.*/,
   cors({
@@ -48,7 +57,7 @@ app.options(
       ) {
         callback(null, true);
       } else {
-        callback(new Error("CORS no permitido"));
+        callback(new Error("CORS not allowed"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -56,7 +65,10 @@ app.options(
   })
 );
 
-// protecciones de seguridad
+/**
+ * security protection using helmet
+ * helps protect against known web vulnerabilities
+ */
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -64,7 +76,10 @@ app.use(
   })
 );
 
-// cabeceras CSP para restringir recursos externos peligrosos
+/**
+ * custom content security policy (CSP)
+ * restricts external resources to prevent malicious content injection
+ */
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -80,7 +95,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// cabeceras adicionales para evitar sniffing y clickjacking
+/**
+ * additional security headers
+ * - prevents MIME type sniffing
+ * - disables clickjacking
+ * - controls referrer information sent to other sites
+ */
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -88,20 +108,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// middleware json
+/**
+ * json middleware
+ * parses incoming JSON requests into req.body
+ */
 app.use(express.json());
 
-// rutas
+/**
+ * main route handlers
+ * organizes API endpoints by category
+ */
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", movieRoutes);
 
-// ruta base
-app.get("/", (req, res) => res.send("🔥 backend funcionando correctamente"));
+/**
+ * base route
+ * used to verify that the backend is running correctly
+ */
+app.get("/", (req, res) => res.send("🔥 backend running successfully"));
 
-// inicializar db
+/**
+ * initializes database connection
+ * ensures tables and connections are ready before serving requests
+ */
 initDatabase();
 
-// puerto
+/**
+ * starts the server
+ * listens on the specified port and logs successful startup
+ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 servidor corriendo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 server running on port ${PORT}`));

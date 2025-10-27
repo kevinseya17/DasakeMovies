@@ -1,47 +1,57 @@
-// valida formato de correo electrónico (básico RFC 5322)
+// validates basic email format (RFC 5322)
 export const isValidEmail = (email: string): boolean => {
-  // evita espacios y asegura estructura usuario@dominio.tld
+  // prevents spaces and ensures user@domain.tld structure
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email.trim());
 };
 
-// valida contraseñas seguras y permite acentos y ñ
+/**
+ * validates a secure password allowing accents and ñ
+ *
+ * requirements:
+ * - at least 8 characters
+ * - at least one lowercase letter (including ñ or accented)
+ * - at least one uppercase letter (including Ñ or accented)
+ * - at least one number
+ * - at least one special character
+ * - supports accented letters and ñ
+ */
 export const isValidPassword = (password: string): boolean => {
-  /*
-    requisitos:
-    - mínimo 8 caracteres
-    - al menos una letra minúscula (puede ser ñ o con acento)
-    - al menos una letra mayúscula (puede ser Ñ o con acento)
-    - al menos un número
-    - al menos un símbolo especial
-    - permite letras acentuadas y ñ
-  */
   const regex =
     /^(?=.*[a-záéíóúüñ])(?=.*[A-ZÁÉÍÓÚÜÑ])(?=.*\d)(?=.*[@$!%*?&._-])[A-Za-zÁÉÍÓÚÜÑñ\d@$!%*?&._-]{8,}$/;
   return regex.test(password);
 };
 
-// compara contraseña y confirmación
+/**
+ * compares password and confirmation to ensure they match
+ *
+ * returns true if both strings are identical, otherwise false
+ */
 export const passwordsMatch = (password: string, confirmPassword: string): boolean => {
   return password === confirmPassword;
 };
 
-// valida que la edad sea un número entero y mínimo 13 años
+/**
+ * validates that age is an integer and at least 13 years old
+ *
+ * ensures compliance with minimum age requirement
+ */
 export const isValidAge = (age: number): boolean => {
   return Number.isInteger(age) && age >= 13;
 };
 
-// valida nombre y apellidos (permite ñ, acentos y espacios)
+/**
+ * validates names and last names allowing ñ, accents, and spaces
+ *
+ * accepts:
+ * - uppercase and lowercase letters
+ * - ñ and Ñ
+ * - accented vowels (á, é, í, ó, ú, ü)
+ * - spaces
+ *
+ * valid example: "José María Ñuñez"
+ */
 export const isValidName = (name: string): boolean => {
-  /*
-    acepta:
-    - letras mayúsculas o minúsculas
-    - ñ y Ñ
-    - vocales acentuadas (á, é, í, ó, ú, ü)
-    - espacios
-    ejemplo válido: "José María Ñuñez"
-  */
   const regex = /^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ\s]+$/;
   return regex.test(name.trim());
 };
-

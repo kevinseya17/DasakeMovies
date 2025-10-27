@@ -6,7 +6,18 @@ import crypto from "crypto";
 import { sendMail } from "../services/emailService";
 import { isValidEmail, isValidPassword, passwordsMatch } from "../utils/validators";
 
-// login
+const JWT_SECRET = process.env.JWT_SECRET!;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+/**
+ * Logs in a user by validating their credentials and returning a JWT token.
+ *
+ * async
+ * function login
+ * param {Request} req - Express request object containing user credentials (email, password).
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON response with a token and user information, or an error message.
+ */
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -28,12 +39,27 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// logout
+/**
+ * Logs out the user by simply returning a confirmation message.
+ *
+ * function logout
+ * param {Request} _req - Express request object (unused).
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message confirming successful logout.
+ */
 export const logout = async (_req: Request, res: Response) => {
   res.status(200).json({ message: "Sesión cerrada correctamente" });
 };
 
-// perfil del usuario loggeado
+/**
+ * Retrieves the profile of the currently logged-in user.
+ *
+ * async
+ * function profile
+ * param {Request} req - Express request object containing the authenticated user in `req.user`.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON response with user data or an error message.
+ */
 export const profile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
@@ -49,9 +75,16 @@ export const profile = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Intenta de nuevo más tarde" });
   }
 };
-const JWT_SECRET = process.env.JWT_SECRET!;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-// solicitar recuperación de contraseña
+
+/**
+ * Sends a password reset email with a unique token to the user.
+ *
+ * async
+ * function forgotPassword
+ * param {Request} req - Express request object containing the user's email.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message indicating that the user should check their email.
+ */
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -85,9 +118,16 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-// resetear contraseña
+/**
+ * Resets a user's password using a valid reset token.
+ *
+ * async
+ * function resetPassword
+ * param {Request} req - Express request object containing the reset token and new password.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message confirming successful password reset or an error message.
+ */
 export const resetPassword = async (req: Request, res: Response) => {
-  
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword)
@@ -97,7 +137,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     try {
       payload = jwt.verify(token, JWT_SECRET);
     } catch {
-      
       return res.status(400).json({ message: "enlace inválido o caducado" });
     }
 
@@ -117,7 +156,16 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "intenta de nuevo más tarde" });
   }
 };
-// cambiar contraseña desde perfil
+
+/**
+ * Allows a logged-in user to change their password from their profile.
+ *
+ * async
+ * function changePassword
+ * param {Request} req - Express request object containing the authenticated user and new password fields.
+ * param {Response} res - Express response object.
+ * returns {Promise<void>} JSON message confirming successful password update or an error message.
+ */
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;

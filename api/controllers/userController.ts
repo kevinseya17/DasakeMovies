@@ -3,10 +3,15 @@ import { supabase } from "../config/database";
 import { hashPassword } from "../middlewares/hashPassword";
 import { isValidEmail, isValidPassword, isValidAge, passwordsMatch } from "../utils/validators";
 
-// registrar usuario
+/**
+ * registers a new user in the database
+ * validates input data such as name, age, email, and password
+ * checks for existing users before saving a new one
+ * stores passwords securely using bcrypt hashing
+ */
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    console.log("req.body recibido:", req.body); 
+    console.log("req.body recibido:", req.body);
     const { firstName, lastName, age, email, password, confirmPassword } = req.body;
 
     if (!firstName || !lastName) return res.status(400).json({ message: "Nombre y lastName son requeridos" });
@@ -21,7 +26,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await hashPassword(password);
 
     const { data, error } = await supabase.from("users").insert([{
-    firstName, lastName, age, email, password: hashedPassword, created_at: new Date().toISOString()
+      firstName, lastName, age, email, password: hashedPassword, created_at: new Date().toISOString()
     }]).select();
 
     if (error) return res.status(500).json({ message: "Intenta de nuevo más tarde" });
@@ -33,7 +38,10 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-// obtener todos los usuarios
+/**
+ * retrieves all registered users from the database
+ * returns the full list of users or an error message if something goes wrong
+ */
 export const getUsers = async (_req: Request, res: Response) => {
   try {
     const { data, error } = await supabase.from("users").select("*");
@@ -45,7 +53,10 @@ export const getUsers = async (_req: Request, res: Response) => {
   }
 };
 
-// obtener usuario por id
+/**
+ * retrieves a single user by their id
+ * returns the user information if found, or an error message if not
+ */
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -59,15 +70,18 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-// actualizar usuario
+/**
+ * updates user information such as name, age, email, or password
+ * validates data before saving and hashes the password if changed
+ * rejects updates if no valid fields are provided
+ */
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const {firstName, lastName, age, correo, password, confirmPassword } = req.body;
+    const { firstName, lastName, age, correo, password, confirmPassword } = req.body;
 
     const updates: any = {};
 
-    // validaciones condicionales
     if (firstName) updates.firstName = firstName.trim();
     if (lastName) updates.lastName = lastName.trim();
 
@@ -84,7 +98,6 @@ export const updateUser = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "correo electrónico inválido" });
       }
 
-      // verificar si el correo ya está en uso por otro usuario
       const { data: existingUser, error: emailCheckError } = await supabase
         .from("users")
         .select("id")
@@ -113,7 +126,6 @@ export const updateUser = async (req: Request, res: Response) => {
       updates.password = hashedPassword;
     }
 
-    // si no se envió ningún campo, no tiene sentido actualizar
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "no se enviaron datos para actualizar" });
     }
@@ -142,18 +154,19 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-
-// eliminar usuario
+/**
+ * deletes a user by id from the database
+ * verifies that the user exists before deletion
+ * returns confirmation of deletion or error details if it fails
+ */
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // validar id
     if (!id || id.trim().length === 0) {
       return res.status(400).json({ message: "id de usuario no proporcionado" });
     }
 
-    // verificar si el usuario existe antes de eliminar
     const { data: existingUser, error: findError } = await supabase
       .from("users")
       .select("id, email")
@@ -169,7 +182,6 @@ export const deleteUser = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "usuario no encontrado" });
     }
 
-    // eliminar usuario
     const { error: deleteError } = await supabase.from("users").delete().eq("id", id);
 
     if (deleteError) {
@@ -188,15 +200,20 @@ export const deleteUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "error interno del servidor" });
   }
 };
-// obtener perfil del usuario logueado
+
+/**
+ * retrieves the profile of the currently authenticated user
+ * requires user id provided by the authentication middleware
+ * excludes the password field before returning the user object
+ */
 export const getProfile = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id; // viene del authMiddleware
+    const userId = (req as any).user.id;
     const { data, error } = await supabase.from("users").select("*").eq("id", userId);
     if (error) return res.status(500).json({ message: "Intenta de nuevo más tarde" });
     if (!data || data.length === 0) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    const { password, ...user } = data[0]; // no enviar password
+    const { password, ...user } = data[0];
     res.json(user);
   } catch (err) {
     console.error(err);

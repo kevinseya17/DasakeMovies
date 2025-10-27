@@ -3,31 +3,39 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// set API key from environment variables
+// configure SendGrid API key from environment variables
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "");
 
 /**
- * sendMail
+ * Sends an email using the SendGrid API.
  * 
- * Sends an email using SendGrid.
+ * This function composes and dispatches an email message with the specified
+ * recipient, subject, and HTML content. The sender information (email and name)
+ * is retrieved from environment variables to ensure security and consistency.
  * 
- * @param to - recipient email address
- * @param subject - email subject
- * @param html - email content in HTML format
- * @returns info - information about the sent email
- * @throws error if sending fails
+ * Parameters:
+ * - to: the recipient's email address.
+ * - subject: the subject line of the email.
+ * - html: the email body in HTML format.
+ * 
+ * Returns:
+ * - the SendGrid response containing information about the sent message.
+ * 
+ * Throws:
+ * - an error if the email fails to send.
  * 
  * Notes:
- * - "from" email is set from environment variable EMAIL_FROM
- * - sender name is "Soporte DasakeMovies"
+ * - the sender email is defined by the environment variable EMAIL_FROM.
+ * - the display name for the sender is "Soporte DasakeMovies".
+ * - all errors are logged before being rethrown.
  */
 export const sendMail = async (to: string, subject: string, html: string) => {
   try {
     const msg = {
       to,
       from: {
-        email: process.env.EMAIL_FROM!, // verified sender in SendGrid
-        name: "Soporte DasakeMovies",   // display name
+        email: process.env.EMAIL_FROM!, // verified sender email in SendGrid
+        name: "Soporte DasakeMovies",   // sender display name
       },
       subject,
       html,
