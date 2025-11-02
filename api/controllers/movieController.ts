@@ -248,19 +248,35 @@ export const addComment = async (req: Request, res: Response) => {
  */
 export const getCommentsByMovie = async (req: Request, res: Response) => {
   const movieExternalId = req.params.movieExternalId;
+  const { title, posterUrl } = req.query; // opcionalmente se pueden pasar por query
 
   if (!movieExternalId)
     return res.status(400).json({ message: "falta el id externo de la pelicula" });
 
   try {
-    const { data: movie } = await supabase
+    // buscar película
+    let { data: movie, error: movieError } = await supabase
       .from("movies")
       .select("id")
       .eq("external_id", movieExternalId)
       .single();
 
-    if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
+    // si no existe, crearla automáticamente
+    if (!movie) {
+      const { data: newMovie, error: createError } = await supabase
+        .from("movies")
+        .insert([{
+          external_id: movieExternalId,
+          title: (title as string) ?? "titulo desconocido",
+          poster_url: (posterUrl as string) ?? "",
+        }])
+        .select("id")
+        .single();
+      if (createError) throw new Error(createError.message);
+      movie = newMovie;
+    }
 
+    // obtener comentarios
     const { data, error } = await supabase
       .from("comments")
       .select("id, content, created_at, updated_at, user_id")
@@ -268,8 +284,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
-
-    res.status(200).json(data);
+    res.status(200).json(data || []);
   } catch (err: any) {
     res.status(500).json({ message: "error al obtener comentarios", error: err.message });
   }
@@ -383,18 +398,31 @@ export const rateMovie = async (req: Request, res: Response) => {
  */
 export const getMovieRating = async (req: Request, res: Response) => {
   const movieExternalId = req.params.movieExternalId;
+  const { title, posterUrl } = req.query;
 
   if (!movieExternalId)
     return res.status(400).json({ message: "falta el id externo de la pelicula" });
 
   try {
-    const { data: movie } = await supabase
+    let { data: movie, error: movieError } = await supabase
       .from("movies")
       .select("id")
       .eq("external_id", movieExternalId)
       .single();
 
-    if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
+    if (!movie) {
+      const { data: newMovie, error: createError } = await supabase
+        .from("movies")
+        .insert([{
+          external_id: movieExternalId,
+          title: (title as string) ?? "titulo desconocido",
+          poster_url: (posterUrl as string) ?? "",
+        }])
+        .select("id")
+        .single();
+      if (createError) throw new Error(createError.message);
+      movie = newMovie;
+    }
 
     const { data, error } = await supabase
       .from("rankings")
