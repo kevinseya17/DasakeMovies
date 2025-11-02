@@ -189,3 +189,227 @@ export const getFavorites = async (req: Request, res: Response) => {
 
   res.status(200).json(data);
 };
+/**
+ * ===============================
+ * COMENTARIOS DE USUARIOS
+ * ===============================
+ */
+
+/**
+ * crea un comentario nuevo en una pelicula
+ */
+export const addComment = async (req: Request, res: Response) => {
+  const { userId, movieExternalId, content, title, posterUrl } = req.body;
+
+  if (!userId || !movieExternalId || !content)
+    return res.status(400).json({ message: "faltan datos obligatorios" });
+
+  try {
+    // 1️⃣ verificar si la pelicula ya existe en la tabla movies
+    const { data: existingMovie, error: movieError } = await supabase
+      .from("movies")
+      .select("id")
+      .eq("external_id", movieExternalId)
+      .single();
+
+    if (movieError && movieError.code !== "PGRST116")
+      throw new Error(movieError.message);
+
+    let movieId = existingMovie?.id;
+
+    // 2️⃣ si no existe, crearla
+    if (!movieId) {
+      const { data: newMovie, error: createError } = await supabase
+        .from("movies")
+        .insert([{ external_id: movieExternalId, title, poster_url: posterUrl }])
+        .select("id")
+        .single();
+
+      if (createError) throw new Error(createError.message);
+      movieId = newMovie.id;
+    }
+
+    // 3️⃣ crear comentario
+    const { data, error } = await supabase
+      .from("comments")
+      .insert([{ user_id: userId, movie_id: movieId, content }])
+      .select();
+
+    if (error) throw new Error(error.message);
+
+    res.status(201).json({ message: "comentario agregado correctamente", data });
+  } catch (err: any) {
+    res.status(500).json({ message: "error al agregar comentario", error: err.message });
+  }
+};
+
+/**
+ * obtiene todos los comentarios de una pelicula
+ */
+export const getCommentsByMovie = async (req: Request, res: Response) => {
+  const movieExternalId = req.params.movieExternalId;
+
+  if (!movieExternalId)
+    return res.status(400).json({ message: "falta el id externo de la pelicula" });
+
+  try {
+    const { data: movie } = await supabase
+      .from("movies")
+      .select("id")
+      .eq("external_id", movieExternalId)
+      .single();
+
+    if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
+
+    const { data, error } = await supabase
+      .from("comments")
+      .select("id, content, created_at, updated_at, user_id")
+      .eq("movie_id", movie.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    res.status(200).json(data);
+  } catch (err: any) {
+    res.status(500).json({ message: "error al obtener comentarios", error: err.message });
+  }
+};
+
+/**
+ * edita un comentario existente
+ */
+export const updateComment = async (req: Request, res: Response) => {
+  const { commentId, userId, content } = req.body;
+
+  if (!commentId || !userId || !content)
+    return res.status(400).json({ message: "faltan datos obligatorios" });
+
+  try {
+    const { error } = await supabase
+      .from("comments")
+      .update({ content })
+      .eq("id", commentId)
+      .eq("user_id", userId);
+
+    if (error) throw new Error(error.message);
+
+    res.status(200).json({ message: "comentario actualizado correctamente" });
+  } catch (err: any) {
+    res.status(500).json({ message: "error al actualizar comentario", error: err.message });
+  }
+};
+
+/**
+ * elimina un comentario existente
+ */
+export const deleteComment = async (req: Request, res: Response) => {
+  const { commentId, userId } = req.body;
+
+  if (!commentId || !userId)
+    return res.status(400).json({ message: "faltan datos obligatorios" });
+
+  try {
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", userId);
+
+    if (error) throw new Error(error.message);
+
+    res.status(200).json({ message: "comentario eliminado correctamente" });
+  } catch (err: any) {
+    res.status(500).json({ message: "error al eliminar comentario", error: err.message });
+  }
+};
+
+/**
+ * ===============================
+ * CALIFICACIONES / RATINGS
+ * ===============================
+ */
+
+/**
+ * crea o actualiza la calificacion de una pelicula
+ */
+export const rateMovie = async (req: Request, res: Response) => {
+  const { userId, movieExternalId, rating, title, posterUrl } = req.body;
+
+  if (!userId || !movieExternalId || !rating)
+    return res.status(400).json({ message: "faltan datos obligatorios" });
+
+  if (rating < 1 || rating > 5)
+    return res.status(400).json({ message: "la calificacion debe estar entre 1 y 5" });
+
+  try {
+    // 1️⃣ obtener o crear la pelicula
+    const { data: existingMovie, error: movieError } = await supabase
+      .from("movies")
+      .select("id")
+      .eq("external_id", movieExternalId)
+      .single();
+
+    if (movieError && movieError.code !== "PGRST116")
+      throw new Error(movieError.message);
+
+    let movieId = existingMovie?.id;
+
+    if (!movieId) {
+      const { data: newMovie, error: createError } = await supabase
+        .from("movies")
+        .insert([{ external_id: movieExternalId, title, poster_url: posterUrl }])
+        .select("id")
+        .single();
+
+      if (createError) throw new Error(createError.message);
+      movieId = newMovie.id;
+    }
+
+    // 2️⃣ insertar o actualizar calificacion
+    const { error: upsertError } = await supabase
+      .from("rankings")
+      .upsert([{ user_id: userId, movie_id: movieId, rating }], { onConflict: "user_id, movie_id" });
+
+    if (upsertError) throw new Error(upsertError.message);
+
+    res.status(201).json({ message: "calificacion registrada correctamente" });
+  } catch (err: any) {
+    res.status(500).json({ message: "error al registrar calificacion", error: err.message });
+  }
+};
+
+/**
+ * obtiene la calificacion promedio de una pelicula
+ */
+export const getMovieRating = async (req: Request, res: Response) => {
+  const movieExternalId = req.params.movieExternalId;
+
+  if (!movieExternalId)
+    return res.status(400).json({ message: "falta el id externo de la pelicula" });
+
+  try {
+    const { data: movie } = await supabase
+      .from("movies")
+      .select("id")
+      .eq("external_id", movieExternalId)
+      .single();
+
+    if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
+
+    const { data, error } = await supabase
+      .from("rankings")
+      .select("rating")
+      .eq("movie_id", movie.id);
+
+    if (error) throw new Error(error.message);
+
+    const promedio =
+      data && data.length > 0
+        ? data.reduce((acc, cur) => acc + cur.rating, 0) / data.length
+        : 0;
+
+    res.status(200).json({ promedio });
+  } catch (err: any) {
+    res.status(500).json({ message: "error al obtener promedio", error: err.message });
+  }
+};
