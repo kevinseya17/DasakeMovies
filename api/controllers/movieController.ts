@@ -263,7 +263,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
 
     const { data, error } = await supabase
       .from("comments")
-      .select("id, content, created_at, updated_at, user_id")
+      .select(`id, content, created_at, updated_at, user_id, users(first_name)`)
       .eq("movie_id", movie.id)
       .order("created_at", { ascending: false });
 
