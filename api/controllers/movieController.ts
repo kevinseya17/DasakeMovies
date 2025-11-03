@@ -272,7 +272,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
         created_at,
         updated_at,
         user_id,
-        users!comments_user_id(firstName)
+        users!left(firstName)
       `)
       .eq("movie_id", movie.id)
       .order("created_at", { ascending: false });
@@ -290,9 +290,6 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     res.status(500).json({ message: "error al obtener comentarios", error: err.message });
   }
 };
-
-
-
 
 /**
  * edita un comentario existente
