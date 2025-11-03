@@ -381,13 +381,18 @@ export const rateMovie = async (req: Request, res: Response) => {
 /**
  * obtiene la calificacion promedio de una pelicula
  */
+/**
+ * obtiene la calificacion promedio y del usuario actual de una pelicula
+ */
 export const getMovieRating = async (req: Request, res: Response) => {
   const movieExternalId = req.params.movieExternalId;
+  const userId = req.query.userId as string; // recibimos el id del usuario como query
 
-  if (!movieExternalId)
+  if (!movieExternalId) 
     return res.status(400).json({ message: "falta el id externo de la pelicula" });
 
   try {
+    // obtenemos la pelicula
     const { data: movie } = await supabase
       .from("movies")
       .select("id")
@@ -396,7 +401,8 @@ export const getMovieRating = async (req: Request, res: Response) => {
 
     if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
 
-    const { data, error } = await supabase
+    // calificaciones de todos los usuarios
+    const { data: allRatings, error } = await supabase
       .from("rankings")
       .select("rating")
       .eq("movie_id", movie.id);
@@ -404,11 +410,26 @@ export const getMovieRating = async (req: Request, res: Response) => {
     if (error) throw new Error(error.message);
 
     const promedio =
-      data && data.length > 0
-        ? data.reduce((acc, cur) => acc + cur.rating, 0) / data.length
+      allRatings && allRatings.length > 0
+        ? allRatings.reduce((acc, cur) => acc + cur.rating, 0) / allRatings.length
         : 0;
 
-    res.status(200).json({ promedio });
+    // calificación del usuario actual
+    let userRating: number | null = null;
+    if (userId) {
+      const { data: userData, error: userError } = await supabase
+        .from("rankings")
+        .select("rating")
+        .eq("movie_id", movie.id)
+        .eq("user_id", userId)
+        .single();
+
+      if (!userError && userData) {
+        userRating = userData.rating;
+      }
+    }
+
+    res.status(200).json({ promedio, userRating });
   } catch (err: any) {
     res.status(500).json({ message: "error al obtener promedio", error: err.message });
   }
