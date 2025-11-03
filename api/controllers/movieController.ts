@@ -253,17 +253,25 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "falta el id externo de la pelicula" });
 
   try {
-    const { data: movie } = await supabase
+    const { data: movie, error: movieError } = await supabase
       .from("movies")
       .select("id")
       .eq("external_id", movieExternalId)
       .single();
 
+    if (movieError) throw new Error(movieError.message);
     if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
 
     const { data, error } = await supabase
       .from("comments")
-      .select("id, content, created_at, updated_at, user_id, users(first_name)")
+      .select(`
+        id,
+        content,
+        created_at,
+        updated_at,
+        user_id,
+        user:first_name
+      `)
       .eq("movie_id", movie.id)
       .order("created_at", { ascending: false });
 
@@ -274,6 +282,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     res.status(500).json({ message: "error al obtener comentarios", error: err.message });
   }
 };
+
 
 /**
  * edita un comentario existente
