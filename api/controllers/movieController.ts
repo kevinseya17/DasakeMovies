@@ -253,7 +253,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "falta el id externo de la pelicula" });
 
   try {
-    // obtener el id interno de la película
+    // obtenemos id interno de la pelicula
     const { data: movie, error: movieError } = await supabase
       .from("movies")
       .select("id")
@@ -263,18 +263,25 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     if (movieError) throw new Error(movieError.message);
     if (!movie) return res.status(404).json({ message: "pelicula no encontrada" });
 
-    // obtener comentarios con la información del usuario
+    // obtenemos comentarios con info del usuario
     const { data, error } = await supabase
       .from("comments")
-      .select("id, content, created_at, updated_at, user_id, users!inner(first_name)")
+      .select(`
+        id,
+        content,
+        created_at,
+        updated_at,
+        user_id,
+        users!comments_user_id(firstName)
+      `)
       .eq("movie_id", movie.id)
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
 
-    // mapear para devolver { user, text }
-    const formatted = data.map((c: any) => ({
-      user: c.users.first_name ?? "usuario",
+    // mapear para front
+    const formatted = (data || []).map((c: any) => ({
+      user: c.users?.firstName ?? "usuario",
       text: c.content,
     }));
 
@@ -283,6 +290,7 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
     res.status(500).json({ message: "error al obtener comentarios", error: err.message });
   }
 };
+
 
 
 
