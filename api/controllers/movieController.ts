@@ -294,32 +294,50 @@ export const getCommentsByMovie = async (req: Request, res: Response) => {
 /**
  * edita un comentario existente
  */
+/**
+ * ===============================
+ * ACTUALIZA UN COMENTARIO
+ * ===============================
+ */
 export const updateComment = async (req: Request, res: Response) => {
-  const { commentId, userId, content } = req.body;
+  const { commentId } = req.params; // ahora viene en params
+  const { userId, content } = req.body;
 
   if (!commentId || !userId || !content)
     return res.status(400).json({ message: "faltan datos obligatorios" });
 
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("comments")
       .update({ content })
       .eq("id", commentId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .select("id, user_id, content, created_at");
 
     if (error) throw new Error(error.message);
+    if (!data || data.length === 0)
+      return res.status(404).json({ message: "comentario no encontrado o no autorizado" });
 
-    res.status(200).json({ message: "comentario actualizado correctamente" });
+    res.status(200).json({
+      message: "comentario actualizado correctamente",
+      comment: data[0],
+    });
   } catch (err: any) {
-    res.status(500).json({ message: "error al actualizar comentario", error: err.message });
+    res.status(500).json({
+      message: "error al actualizar comentario",
+      error: err.message,
+    });
   }
 };
 
 /**
- * elimina un comentario existente
+ * ===============================
+ * ELIMINA UN COMENTARIO
+ * ===============================
  */
 export const deleteComment = async (req: Request, res: Response) => {
-  const { commentId, userId } = req.body;
+  const { commentId } = req.params;
+  const { userId } = req.body;
 
   if (!commentId || !userId)
     return res.status(400).json({ message: "faltan datos obligatorios" });
@@ -335,9 +353,13 @@ export const deleteComment = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "comentario eliminado correctamente" });
   } catch (err: any) {
-    res.status(500).json({ message: "error al eliminar comentario", error: err.message });
+    res.status(500).json({
+      message: "error al eliminar comentario",
+      error: err.message,
+    });
   }
 };
+
 
 /**
  * ===============================

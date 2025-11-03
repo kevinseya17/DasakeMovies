@@ -50,11 +50,8 @@ router.post("/comments", addComment);
 // retrieves all comments for a given movie
 router.get("/:movieExternalId/comments", getCommentsByMovie);
 
-// updates an existing comment
-router.put("/comments", updateComment);
-
-// deletes a comment made by a user
-router.delete("/comments", deleteComment);
+router.put("/comments/:commentId", updateComment);   // ahora con params
+router.delete("/comments/:commentId", deleteComment);
 
 /* ==========================
    RATINGS
